@@ -1,0 +1,86 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # agar APK bisa dilampirkan ke Release saat push tag
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Pasang dependensi
+        run: npm install
+
+      - name: Sertakan library XLSX (agar APK jalan offline)
+        run: |
+          if cp node_modules/xlsx-js-style/dist/xlsx.bundle.js www/xlsx.bundle.js; then
+            sed -i 's#https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js#xlsx.bundle.js#' www/index.html
+          else
+            echo "File library tidak ditemukan, tetap memakai CDN."
+          fi
+
+      - name: Buat proyek Android
+        run: npx cap add android
+
+      - name: Izin Bluetooth (perangkat di sekitar)
+        run: |
+          python3 - <<'PY'
+          p = 'android/app/src/main/AndroidManifest.xml'
+          s = open(p, encoding='utf-8').read()
+          if 'xmlns:tools' not in s:
+              s = s.replace('<manifest ', '<manifest xmlns:tools="http://schemas.android.com/tools" ', 1)
+          perms = """
+              <!-- Bluetooth: cari dan sambungkan perangkat di sekitar (printer) -->
+              <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+              <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+              <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
+              <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
+              <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" tools:targetApi="s" />
+              <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+              <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+          """
+          assert 'BLUETOOTH_SCAN' not in s
+          s = s.replace('</manifest>', perms + '</manifest>')
+          open(p, 'w', encoding='utf-8').write(s)
+          print('AndroidManifest: izin Bluetooth ditambahkan')
+          PY
+
+      - name: Ikon aplikasi
+        continue-on-error: true   # bila gagal, APK tetap dibuat dengan ikon bawaan
+        run: npx capacitor-assets generate --android
+
+      - name: Sinkronkan aset web
+        run: npx cap sync android
+
+      - name: Build APK (debug)
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: kasir-kite-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Lampirkan ke Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: android/app/build/outputs/apk/debug/app-debug.apk
