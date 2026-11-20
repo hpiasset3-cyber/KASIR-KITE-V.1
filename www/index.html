@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kasir Kite Sync</title>
+<meta name="theme-color" content="#11947f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<header class="top"><div class="brand"><div class="logo">K</div><div><h1>Kasir Kite</h1><small>CEPAT · MUDAH · RAPI</small><div class="liveDateTime"><span id="liveDate">-</span><span class="dot">•</span><span id="liveTime">--:--:--</span></div></div></div><div><button class="btn" id="theme">☀</button></div></header>
+<!-- Navigasi bawah -->
+<nav class="tabs"><button class="tab active" data-p="kasir"><span>🛒</span>Kasir</button><button class="tab" data-p="laporan"><span>📊</span>Laporan</button><button class="tab" data-p="produk"><span>📦</span>Produk</button><button class="tab" data-p="sync"><span>ᛒ</span>Sync</button></nav>
+<!-- Panel: Kasir -->
+<section class="panel active" id="kasir"><div class="card"><div class="head"><h2>✦ Pilih Produk</h2></div><div class="two"><div class="field"><label>Nama kasir *</label><input id="cashier" placeholder="Wajib diisi"></div><div class="field"><label>Cari</label><input id="search" placeholder="Nama atau kode"></div></div><div class="products" id="products"></div></div><div class="card"><div class="head"><h2>🧺 Keranjang</h2><button class="btn danger" id="clear">Kosongkan</button></div><div id="cart"></div><div class="row"><span>Subtotal</span><b id="subtotal">Rp0</b></div><div class="row"><span>Diskon</span><input id="discount" type="number" min="0" value="0" style="width:120px"></div><div class="row total"><span>Total</span><b id="total">Rp0</b></div><div class="field"><label>Uang diterima</label><div class="moneybox"><span>Rp</span><input id="pay" inputmode="numeric" placeholder="0"></div></div><div class="row"><span>Kembalian</span><b id="change">Rp0</b></div><div class="notice" id="cashMsg"></div><button class="btn primary" id="checkout" style="width:100%">Simpan & Cetak Struk</button></div></section>
+<!-- Panel: Laporan -->
+<section class="panel" id="laporan"><div class="metrics" id="metrics"></div><div class="card"><div class="reportFilters"><div class="field"><label for="filter">Filter</label><select id="filter"><option value="all">Semua</option><option value="date">Tanggal</option><option value="month">Bulan</option></select></div><div class="dateRangeFields" id="dateRangeFields" hidden><div class="field"><label for="dateStart">Tanggal mulai</label><input id="dateStart" type="date"></div><div class="field"><label for="dateEnd">Sampai tanggal</label><input id="dateEnd" type="date"></div></div><div class="monthFields" id="monthField" hidden><div class="field"><label for="monthSelect">Pilih bulan</label><select id="monthSelect"><option value="01">Januari</option><option value="02">Februari</option><option value="03">Maret</option><option value="04">April</option><option value="05">Mei</option><option value="06">Juni</option><option value="07">Juli</option><option value="08">Agustus</option><option value="09">September</option><option value="10">Oktober</option><option value="11">November</option><option value="12">Desember</option></select></div><div class="field"><label for="monthYear">Tahun</label><input id="monthYear" type="number" inputmode="numeric" min="2000" max="2100" step="1"></div></div></div><div class="notice" id="filterMsg"></div><div class="reportFilterActions"><button class="btn primary reportMainAction" id="apply" type="button"><span class="actionIcon" aria-hidden="true">✓</span><span>Terapkan</span></button><button class="btn reportMainAction" id="xlsx" type="button"><span class="actionIcon" aria-hidden="true">⇩</span><span>Ekspor XLSX</span></button></div><div class="table"><table><thead><tr><th>No</th><th>Tanggal</th><th>Waktu</th><th>Kasir</th><th>Total</th><th>Untung</th><th>Aksi</th></tr></thead><tbody id="report"></tbody></table></div></div></section>
+<!-- Panel: Produk -->
+<section class="panel" id="produk"><div class="card"><h2>Tambah / Edit Produk</h2><form class="form" id="productForm"><div class="field"><label>Kode</label><input id="pcode" required></div><div class="field"><label>Nama</label><input id="pname" required></div><div class="field"><label>Modal</label><input id="pcost" inputmode="numeric" autocomplete="off" placeholder="Rp 0" required></div><div class="field"><label>Harga jual</label><input id="pprice" inputmode="numeric" autocomplete="off" placeholder="Rp 0" required></div><div class="field"><label>Satuan</label><select id="punit"><option>Pcs</option><option>Lusin</option><option>Kg</option><option>Liter</option><option>Dus</option><option>Paket</option></select></div><div class="field"><label>Stok</label><input id="pstock" type="number" min="0" required></div><button class="btn primary full" id="productSubmit">Tambah</button></form><div class="notice" id="productMsg"></div><div class="table"><table><thead><tr><th>Kode</th><th>Produk</th><th>Modal</th><th>Jual</th><th>Satuan</th><th>Stok</th><th>Aksi</th></tr></thead><tbody id="productTable"></tbody></table></div></div></section>
+<!-- Panel: Sinkronisasi -->
+<section class="panel" id="sync">
+ <div class="card syncHero syncTitle">
+  <div class="syncTitleIcon" aria-hidden="true">↻</div>
+  <div><h2>Sinkronisasi Data</h2></div>
+ </div>
+ <div class="syncMenuGrid">
+  <button class="card syncMenuCard transfer" id="btSend" type="button">
+   <span class="syncMenuIcon" aria-hidden="true">↗</span><span class="syncMenuText"><strong>Transfer Data</strong><small>Kirim produk dan transaksi ke HP lain</small></span><span class="syncArrow">›</span>
+  </button>
+  <button class="card syncMenuCard receive" id="btImport" type="button">
+   <span class="syncMenuIcon" aria-hidden="true">↙</span><span class="syncMenuText"><strong>Terima Data</strong><small>Impor data tanpa menghapus data lama</small></span><span class="syncArrow">›</span>
+  </button>
+  <input id="btFile" type="file" accept="application/json,.json" hidden>
+ </div>
+ <div class="notice" id="btMsg" aria-live="polite"></div>
+</section></div>
+<!-- Modal: edit transaksi -->
+<div class="modal" id="editTxModal"><div class="modalbox editTxBox"><h2>Edit Transaksi</h2><div class="field"><label>Nomor transaksi</label><input id="editTxId" disabled></div><div class="two"><div class="field"><label>Tanggal</label><input id="editTxDate" type="date"></div><div class="field"><label>Waktu</label><input id="editTxTime" type="time"></div></div><div class="field"><label>Nama kasir</label><input id="editTxCashier" maxlength="40"></div><div class="field"><label>Diskon</label><input id="editTxDiscount" type="number" min="0"></div><div class="notice" id="editTxMsg"></div><div class="modalactions"><button class="btn" id="cancelEditTx" type="button">Batal</button><button class="btn primary" id="saveEditTx" type="button">Simpan Perubahan</button></div></div></div>
+<!-- Modal: struk & cetak -->
+<div class="modal" id="modal"><div class="modalbox"><article class="paper" id="receipt"></article><div class="printerStatus"><span class="printerDot" id="printerDot"></span><span id="printerStatus">Printer belum dipilih</span></div><div class="modalactions"><button class="btn" id="close" type="button">Tutup</button><button class="btn" id="pairPrinter" type="button">ᛒ Hubungkan Printer</button><button class="btn primary" id="print" type="button">Cetak Struk</button></div><p class="printHint">Pasangkan printer thermal 57 mm di pengaturan Bluetooth HP, lalu ketuk Hubungkan Printer dan pilih printernya. Pilihan tersimpan, setelah itu cukup ketuk Cetak Struk.</p></div></div>
+<script src="app.js"></script>
+</body>
+</html>
